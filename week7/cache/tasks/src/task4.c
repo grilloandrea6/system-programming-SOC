@@ -5,12 +5,13 @@
 
 /*
  * AG macros to define which solution to use
+ * 0 - original code - not working
  * 1 - just disable the cache
  * 2 - use a write-through cache
  * 3 - use LEDS_OLD_BASE address
  * 4 - use dcache_flush at the end of each iteration
  */
-#define SOL_NUMBER 4
+#define SOL_NUMBER 0
 
 // YOU ARE NOT SUPPOSED TO MODIFY ANY OF THE FOLLOWING MACROS.
 
