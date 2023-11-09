@@ -19,8 +19,10 @@ struct item_t {
     /** @brief Item ID. */
     unsigned id;
 
-    /** @brief Item data. */
-    char data[ITEM_DATALEN];
+    /** @brief Item data.
+     *  AG - Changed from array to pointer.
+     */
+    char *data;
 };
 
 /**

@@ -3,6 +3,15 @@
 #include <stdio.h>
 #include <task4.h>
 
+/*
+ * AG macros to define which solution to use
+ * 1 - just disable the cache
+ * 2 - use a write-through cache
+ * 3 - use LEDS_OLD_BASE address
+ * 4 - use dcache_flush at the end of each iteration
+ */
+#define SOL_NUMBER 4
+
 // YOU ARE NOT SUPPOSED TO MODIFY ANY OF THE FOLLOWING MACROS.
 
 // old base address
@@ -21,8 +30,14 @@
 void init_dcache() {
     // YOU CAN MODIFY THIS.
     dcache_enable(0);
+
+#if SOL_NUMBER == 2
+    dcache_write_cfg(CACHE_FOUR_WAY | CACHE_SIZE_4K | CACHE_REPLACE_LRU | CACHE_WRITE_THROUGH);
+    dcache_enable(1);
+#elif SOL_NUMBER != 1
     dcache_write_cfg(CACHE_FOUR_WAY | CACHE_SIZE_4K | CACHE_REPLACE_LRU | CACHE_WRITE_BACK);
     dcache_enable(1);
+#endif
 }
 
 /**
@@ -43,8 +58,11 @@ void init_leds() {
 void bouncing_ball() {
     // YOU CAN MODIFY THIS.
     int xdir, ydir, xpos, ypos, index;
+#if SOL_NUMBER != 3
     volatile unsigned int* leds = (unsigned int*)(LEDS_NEW_BASE + LEDS_LEDS_OFFSET);
-
+#else
+    volatile unsigned int* leds = (unsigned int*)(LEDS_OLD_BASE + LEDS_LEDS_OFFSET);
+#endif
     xdir = ydir = 1;
     xpos = ypos = 5;
     while (1) {
@@ -62,6 +80,9 @@ void bouncing_ball() {
         xpos += xdir;
         index = ypos * 12 + xpos;
         leds[index] = swap_u32(2);
+#if SOL_NUMBER == 4
+        dcache_flush();
+#endif
         for (volatile long i = 0; i < 100000; i++)
             ;
     }
@@ -70,6 +91,8 @@ void bouncing_ball() {
 void task4_main() {
     puts(__func__);
     init_dcache();
+#if SOL_NUMBER != 3
     init_leds();
+#endif
     bouncing_ball();
 }

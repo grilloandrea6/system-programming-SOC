@@ -49,8 +49,9 @@ static void init() {
 static void multiply() {
     // YOU CAN MODIFY THIS.
 
-    for (int j = 0; j < MATRIX_N; ++j) {
-        for (int i = 0; i < MATRIX_N; ++i) {
+    // AG - inverted order of the for cycles
+    for (int i = 0; i < MATRIX_N; ++i) {
+        for (int j = 0; j < MATRIX_N; ++j) {
             out_vector[i] += matrix[i][j] * in_vector[j];
         }
     }

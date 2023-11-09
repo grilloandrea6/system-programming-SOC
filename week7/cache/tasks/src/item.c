@@ -63,8 +63,12 @@ void item_init(item_t* item, uint32_t id, const char* data) {
     // YOU CAN MODIFY THIS.
     item->id = id;
 
-    if (data != NULL)
+    // AG - Added allocation of memory in the mem structure and copy.
+    if (data != NULL) {
+        item->data = (char *) alloc(ITEM_DATALEN);
         memcpy(item->data, data, ITEM_DATALEN);
-    else
-        memset(item->data, 0, ITEM_DATALEN);
+    } else {
+	// AG - a null pointer
+        item->data = 0;
+    }
 }
