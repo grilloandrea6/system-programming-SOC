@@ -114,13 +114,9 @@ void draw_fractal(rgb565 *fbuf, int width, int height,
                   fxpt_4_28 cx_0, fxpt_4_28 cy_0, fxpt_4_28 delta, uint16_t n_max) {
 
   // DEFINITION OF POINTERS FOR SPM AND DMA
-   size_t bufferSize = 256;
-   uint32_t *writeBuffer = (uint32_t *) 0xC0000000;
-   uint32_t *dmaBuffer = writeBuffer + bufferSize;
-   uint32_t *tmp;
-
-   volatile uint32_t *dma = (uint32_t *) DMA_BASE_ADDRESS; 
-
+  uint32_t *bufferStart = (uint32_t *) 0xC0000000;
+  size_t bufferSize = 256;
+  volatile uint32_t *dma = (uint32_t *) DMA_BASE_ADDRESS; 
 
 
 
@@ -130,7 +126,7 @@ void draw_fractal(rgb565 *fbuf, int width, int height,
     fxpt_4_28 cx = cx_0;
 
     // start writing the line at the bufferStart
-    pixel = writeBuffer;     
+    pixel = bufferStart;     
 
 
     for(int i = 0; i < width; ++i) {
@@ -140,21 +136,19 @@ void draw_fractal(rgb565 *fbuf, int width, int height,
       cx += delta;
     }
 
-    tmp = writeBuffer;
-    writeBuffer = dmaBuffer;
-    dmaBuffer = tmp;
-
-    while (swap_u32(dma[START_STATUS_ID]) & 0x1);//printf(".");
 
 
-    dma[MEMORY_ADDRESS_ID] = swap_u32((uint32_t *)(fbuf) + k*256);
-    dma[SPM_ADDRESS_ID] = swap_u32(dmaBuffer);
-    dma[TRANSFER_SIZE_ID] = swap_u32(bufferSize);
-    dma[START_STATUS_ID] = swap_u32(255);
+     dma[MEMORY_ADDRESS_ID] = swap_u32((uint32_t *)(fbuf) + k*256);
+     dma[SPM_ADDRESS_ID] = swap_u32(bufferStart);
+     dma[TRANSFER_SIZE_ID] = swap_u32(bufferSize);
+     dma[START_STATUS_ID] = swap_u32(255); //bus burst size
 
-    //printf("STARTING DMA\n");
-    dma[START_STATUS_ID] = swap_u32(DMA_FROM_SPM_TO_MEM);
- 
+     //printf("STARTING DMA\n");
+     dma[START_STATUS_ID] = swap_u32(DMA_FROM_SPM_TO_MEM);
+
+     while (swap_u32(dma[START_STATUS_ID]) & 0x1);//printf(".");
+//     printf("DMA has finished, going forward");
+     
 
 
 

@@ -20,7 +20,7 @@ LDFLAGS ?=
 
 _LDFLAGS += -nostartfiles
 _CFLAGS += -MMD -DPRINTF_INCLUDE_CONFIG_H -I include/ -I support/include/
-_CFLAGS += -D__REALLY_FAST__
+#_CFLAGS += -D__REALLY_FAST__
 
 ifeq ($(DEBUG), 1)
 BUILD = build-debug

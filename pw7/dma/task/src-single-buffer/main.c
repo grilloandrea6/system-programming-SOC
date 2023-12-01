@@ -44,17 +44,14 @@ int main() {
    dcache_enable(1);
 
 // DEFINITION OF POINTERS FOR SPM AND DMA
+   uint32_t *bufferStart = (uint32_t *) 0xC0000000;
    size_t bufferSize = 256;
-   uint32_t *writeBuffer = (uint32_t *) 0xC0000000;
-   uint32_t *dmaBuffer = writeBuffer + bufferSize;
-   uint32_t *tmp;
-
    volatile uint32_t *dma = (uint32_t *) DMA_BASE_ADDRESS; 
 
 
    perf_start();
 #ifdef __REALLY_FAST__
-   printf("really fast");
+   
 
    int color = (2<<16) | N_MAX;
    asm volatile ("l.nios_crc r0,%[in1],%[in2],0x21"::[in1]"r"(color),[in2]"r"(delta));
@@ -63,7 +60,7 @@ int main() {
    for (int k = 0 ; k < SCREEN_HEIGHT ; k++) { // foreach line
     
     // start writing the line at the bufferStart
-    pixel = writeBuffer;     
+    pixel = bufferStart;     
 
 
      fxpt_4_28 cx = CX_0;
@@ -73,22 +70,18 @@ int main() {
        cx += delta << 1;
      }
     
-     tmp = writeBuffer;
-     writeBuffer = dmaBuffer;
-     dmaBuffer = tmp;
-     
-     while (swap_u32(dma[START_STATUS_ID]) & 0x1);//printf(".");
+     // now set the DMA
 
      
      dma[MEMORY_ADDRESS_ID] = swap_u32((uint32_t *)(frameBuffer) + k*256);
-     dma[SPM_ADDRESS_ID] = swap_u32(dmaBuffer);
+     dma[SPM_ADDRESS_ID] = swap_u32(bufferStart);
      dma[TRANSFER_SIZE_ID] = swap_u32(bufferSize);
-     dma[START_STATUS_ID] = swap_u32(255);
+     dma[START_STATUS_ID] = swap_u32(15);
 
      //printf("STARTING DMA\n");
      dma[START_STATUS_ID] = swap_u32(DMA_FROM_SPM_TO_MEM);
 
-     //while (swap_u32(dma[START_STATUS_ID]) & 0x1);//printf(".");
+     while (swap_u32(dma[START_STATUS_ID]) & 0x1);//printf(".");
      //printf("DMA has finished, going forward");
      cy += delta;
    }
