@@ -60,7 +60,7 @@ void* taskman_spawn(coro_fn_t coro_fn, void *arg, size_t stack_sz) {
     // (3) register the coroutine in the tasks array
     // use die_if_not() statements to handle error conditions (like no memory)
 
-    die_if_not(taskman.stack_offset + stack_sz < TASKMAN_STACK_SIZE);
+    die_if_not(taskman.stack_offset + stack_sz <= TASKMAN_STACK_SIZE);
     void* myStack = &taskman.stack[taskman.stack_offset];
     taskman.stack_offset += stack_sz;
 
