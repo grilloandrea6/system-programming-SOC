@@ -60,8 +60,23 @@ void* taskman_spawn(coro_fn_t coro_fn, void *arg, size_t stack_sz) {
     // (3) register the coroutine in the tasks array
     // use die_if_not() statements to handle error conditions (like no memory)
 
+    die_if_not(taskman.stack_offset + stack_sz < TASKMAN_STACK_SIZE);
+    void* myStack = &taskman.stack[taskman.stack_offset];
+    taskman.stack_offset += stack_sz;
 
-    IMPLEMENT_ME;
+    coro_init(myStack, stack_sz, coro_fn, arg);
+
+    die_if_not(taskman.tasks_count < TASKMAN_NUM_TASKS);
+    taskman.tasks[taskman.tasks_count] = myStack;
+    taskman.tasks_count++;
+
+    struct task_data my_task;
+    my_task.wait.arg = arg;
+    my_task.wait.handler = NULL;
+
+    *(struct task_data*)coro_data(myStack) = my_task;
+    
+    return myStack;
 }
 
 void taskman_loop() {
@@ -72,8 +87,27 @@ void taskman_loop() {
     //        * the waiting handler says it can be resumed.
 
     while (1) {
+        for(int i = 0; i < taskman.handlers_count; i++) {
+            taskman.handlers[i]->loop(taskman.handlers[i]);
+        }
 
-        IMPLEMENT_ME;
+
+        for(int i = 0; i < taskman.tasks_count; i++) {
+
+            if (!coro_completed(taskman.tasks[i], (void**)NULL)) {
+                struct task_data my_task_data = *(struct task_data*)coro_data(taskman.tasks[i]);
+
+                if(my_task_data.wait.handler != NULL) {
+                    if(my_task_data.wait.handler->can_resume(my_task_data.wait.handler,taskman.tasks[i], my_task_data.wait.arg)) {
+                        my_task_data.wait.handler = NULL;
+
+                        coro_resume(taskman.tasks[i]);
+                    }
+                } else {
+                    coro_resume(taskman.tasks[i]);
+                }
+            }
+        }
     }
 }
 
@@ -96,6 +130,9 @@ void taskman_wait(struct taskman_handler* handler, void* arg) {
     // Update the wait field of the task_data.
     // Yield if necessary.
 
-
-    IMPLEMENT_ME;
+    if(!handler->on_wait(handler,stack,arg)) {
+        task_data->wait.arg = arg;
+        task_data->wait.handler = handler;
+        coro_yield();
+    } 
 }
