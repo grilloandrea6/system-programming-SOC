@@ -4,6 +4,9 @@
 
 #include <implement_me.h>
 
+
+#include <stdio.h>
+
 /// @brief Maximum number of wait handlers.
 #define TASKMAN_NUM_HANDLERS 32
 
@@ -93,17 +96,17 @@ void taskman_loop() {
 
 
         for(int i = 0; i < taskman.tasks_count; i++) {
-
             if (!coro_completed(taskman.tasks[i], (void**)NULL)) {
-                struct task_data my_task_data = *(struct task_data*)coro_data(taskman.tasks[i]);
+                struct task_data* my_task_data = coro_data(taskman.tasks[i]);
 
-                if(my_task_data.wait.handler != NULL) {
-                    if(my_task_data.wait.handler->can_resume(my_task_data.wait.handler,taskman.tasks[i], my_task_data.wait.arg)) {
-                        my_task_data.wait.handler = NULL;
+                if(my_task_data->wait.handler != NULL) {
+                    if(my_task_data->wait.handler->can_resume(my_task_data->wait.handler,taskman.tasks[i], my_task_data->wait.arg)) {
+                        my_task_data->wait.handler = NULL;
 
                         coro_resume(taskman.tasks[i]);
                     }
                 } else {
+printf("coro not completed, handler is null, we should be resuming from a yield\n");
                     coro_resume(taskman.tasks[i]);
                 }
             }
