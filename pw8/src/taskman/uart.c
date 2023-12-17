@@ -110,7 +110,7 @@ static int can_resume(struct taskman_handler* handler, void* stack, void* arg) {
     // Note: do not write the new line character
 
     if (wait_data->length == wait_data->buffer_capacity){
-        printf("buffer full - returning 1\n\n");
+        //printf("buffer full - can resume\n\n");
         uart_handler.stack = NULL;
         return 1;
     }
@@ -120,6 +120,7 @@ static int can_resume(struct taskman_handler* handler, void* stack, void* arg) {
         uint8_t data = uart_buffer_pop(uart_buffer);
 
         if(data == '\n') {
+            //printf("received line feed - can resume\n");
             wait_data->buffer[wait_data->length++]= '\0';
             uart_handler.stack = NULL;
             return 1;
