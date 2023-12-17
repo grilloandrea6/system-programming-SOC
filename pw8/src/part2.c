@@ -12,13 +12,14 @@ static void wait_task() {
     while (1) {
         taskman_tick_wait_for(arg);
         printf("%s: now = %u ms (period = %u)\n", __func__, taskman_tick_now() - t0, arg);
+        // added for testing coro_yield();
     }
 
     coro_return(NULL);
 }
 
 static void uart_task() {
-    uint8_t buf[4096 /* vary this, maybe. */];
+    uint8_t buf[10];//changed to check what happens when the buffer is full - 4096 /* vary this, maybe. */];
     int total_len = 0;
 
     while (1) {
@@ -28,6 +29,7 @@ static void uart_task() {
             "UART received line with length = %d (total = %d): %s\n",
             len, total_len, buf
         );
+        // added for testing coro_yield();
     }
 
     coro_return(NULL);

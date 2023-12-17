@@ -4,8 +4,7 @@
 
 #include <implement_me.h>
 
-
-#include <stdio.h>
+// added for testing #include <stdio.h>
 
 /// @brief Maximum number of wait handlers.
 #define TASKMAN_NUM_HANDLERS 32
@@ -90,23 +89,28 @@ void taskman_loop() {
     //        * the waiting handler says it can be resumed.
 
     while (1) {
+        // loop over handlers and call their loop
         for(int i = 0; i < taskman.handlers_count; i++) {
             taskman.handlers[i]->loop(taskman.handlers[i]);
         }
 
-
+        // loop over coro tasks
         for(int i = 0; i < taskman.tasks_count; i++) {
+            // check if the coro is completed
             if (!coro_completed(taskman.tasks[i], (void**)NULL)) {
                 struct task_data* my_task_data = coro_data(taskman.tasks[i]);
 
-                if(my_task_data->wait.handler != NULL) {
-                    if(my_task_data->wait.handler->can_resume(my_task_data->wait.handler,taskman.tasks[i], my_task_data->wait.arg)) {
-                        my_task_data->wait.handler = NULL;
-
-                        coro_resume(taskman.tasks[i]);
-                    }
-                } else {
-printf("coro not completed, handler is null, we should be resuming from a yield\n");
+                if(my_task_data->wait.handler == NULL) {
+                    // there's no handler
+                    // we either start the coro for the first time
+                    // or resume it after a coro_yield
+                    //printf("starting for first time or resuming from coro_yield\n");
+                    coro_resume(taskman.tasks[i]);
+                } else if(my_task_data->wait.handler->can_resume(my_task_data->wait.handler,taskman.tasks[i], my_task_data->wait.arg)) {
+                    // there is a handler for the wait, but the handler says we can resume the coro
+                    // remove the handler from the task, and resume the coro
+                    //printf("resuming from handler\n");
+                    my_task_data->wait.handler = NULL;
                     coro_resume(taskman.tasks[i]);
                 }
             }
@@ -133,9 +137,10 @@ void taskman_wait(struct taskman_handler* handler, void* arg) {
     // Update the wait field of the task_data.
     // Yield if necessary.
 
+    task_data->wait.arg = arg;
+    task_data->wait.handler = handler;
+
     if(!handler->on_wait(handler,stack,arg)) {
-        task_data->wait.arg = arg;
-        task_data->wait.handler = handler;
         coro_yield();
     } 
 }

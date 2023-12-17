@@ -5,6 +5,8 @@
 #include <taskman/uart.h>
 #include <uart.h>
 
+// added for testing - #include <stdio.h>
+
 #include <implement_me.h>
 
 #define UART_BUFFER_CAPACITY 64
@@ -107,14 +109,26 @@ static int can_resume(struct taskman_handler* handler, void* stack, void* arg) {
     // Note: that we need to put a '\0' at the end of the line.
     // Note: do not write the new line character
 
+    if (wait_data->length == wait_data->buffer_capacity){
+        printf("buffer full - returning 1\n\n");
+        uart_handler.stack = NULL;
+        return 1;
+    }
+        
 
-    while(uart_buffer_nonempty(uart_buffer) && wait_data->length < wait_data->capacity) {
-      wait
+    if(uart_buffer_nonempty(uart_buffer)) {
+        uint8_t data = uart_buffer_pop(uart_buffer);
 
+        if(data == '\n') {
+            wait_data->buffer[wait_data->length++]= '\0';
+            uart_handler.stack = NULL;
+            return 1;
+        }
+
+        wait_data->buffer[wait_data->length++] = data;     
     }
 
-
-    IMPLEMENT_ME;
+    return 0;
 }
 
 static void loop(struct taskman_handler* handler) {
@@ -126,9 +140,17 @@ static void loop(struct taskman_handler* handler) {
     // If available, read data from UART and put it to the UART buffer
     // You can discard data if the buffer is full.
     // see: support/src/uart.c for help.
+        
+    while ((uart[UART_LINE_STATUS_REGISTER] & UART_RX_AVAILABLE_MASK) != 0) {
+        uint8_t data = *uart;
 
-
-    IMPLEMENT_ME;
+        if(uart_buffer_nonfull(uart_buffer)) {
+            uart_buffer_put(uart_buffer, data);
+        } else { 
+            // printf("discarding data cause the buffer is full....\n");
+            break;
+        }
+    }
 }
 
 void taskman_uart_glinit() {
